@@ -79,23 +79,14 @@ gradle-app.setting
 !gradle-wrapper.jar
 
 
-###########################
-# django
-###########################
-# Ignore python temp files
+### Python ###
+env/
 *.pyc
 *.py~
-
-# Ignore python cache directory
 __pycache__/
 
-#Ignore my own db.sqlite3
+### django ###
 db.sqlite3
-
-# Ignore virtualenv files
-env/
-
-# Ignore django migrations files
 **/migrations/0*
 
 
