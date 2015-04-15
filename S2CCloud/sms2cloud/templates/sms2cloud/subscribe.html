@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>subscribe</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<form method="POST" action="{% url 'subscribe' %}">
+    <fieldset>
+        <legend>绑定号码：</legend>
+        手机号码（11位）：<br>
+        <input type="text" name="number">
+        <br>
+        <input type="text" name="code" value="{{ code }}" style="display: none">
+        <br>
+        <input type="submit" value="提交">
+    </fieldset>
+</form>
+</body>
+</html>

@@ -1,0 +1,101 @@
+
+### Mac ###
+.DS_Store
+
+### Windows ###
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+
+### Android ###
+bin/
+gen/
+libs/
+obj/
+*.apk
+*.ap_
+*.dex
+*.log
+local.properties
+!project.properties
+
+### Eclipse ###
+.settings/
+tmp/
+proguard/
+.externalToolBuilders/
+.metadata
+.loadpath
+.project
+.classpath
+.cproject
+.buildpath
+.target
+.texlipse
+*.pydevproject
+*.launch
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+
+### Intellij ###
+/out/
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+
+### Gradle ###
+build/
+/*/build/
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+
+
+###########################
+# django
+###########################
+# Ignore python temp files
+*.pyc
+*.py~
+
+# Ignore python cache directory
+__pycache__/
+
+#Ignore my own db.sqlite3
+db.sqlite3
+
+# Ignore virtualenv files
+env/
+
+# Ignore django migrations files
+**/migrations/0*
+
+
