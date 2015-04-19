@@ -83,4 +83,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Server IP or domain hosting this project.
 DOMAIN = "123.57.46.246"
+
+APP_ID = "wxcdab2d880b363449"
+APP_SECRET = "a1177ac905855a4bc5cdf91a5d4f80e9"
+SERVER_TOKEN = "a1177ac905855a4bc5cdf91a5d4f80e9384027jdoru2"
+

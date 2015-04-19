@@ -5,7 +5,7 @@ from sms2cloud.models import *
 
 class BindSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserCredential
+        model = User
         fields = ('number', 'sim_serial')
 #
 #

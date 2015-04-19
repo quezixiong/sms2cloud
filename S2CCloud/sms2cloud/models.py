@@ -1,5 +1,7 @@
 from datetime import timedelta
 import json
+import time
+from datetime import datetime
 import uuid
 from sms2cloud.api import *
 from django.db import models
@@ -10,17 +12,13 @@ from sms2cloud.exceptions import *
 from django.conf import settings
 from urllib.parse import quote_plus
 
-GET_UNREAD_MESSAGE_KEY = "V1001_GET_UNREAD_MESSAGE"
-BIND_PHONE_URL = "https://open.weixin.qq.com/connect/oauth2/authorize" \
-                 "?appid={app_id}&redirect_uri={redirect_uri}&response_type=code&scope=snsapi_base&state=0" \
-                 "#wechat_redirect"
 
 class WechatCredential(models.Model):
     token_in_db = models.CharField(max_length=200, null=True, blank=False)
     token_update_time = models.DateTimeField(null=True)
-    app_id = "wxcdab2d880b363449"
-    app_secret = "a1177ac905855a4bc5cdf91a5d4f80e9"
-    verify_token = "a1177ac905855a4bc5cdf91a5d4f80e9384027jdoru2"
+    app_id = settings.APP_ID
+    app_secret = settings.APP_SECRET
+    server_token = settings.SERVER_TOKEN
     token_expire_in = 7200
 
 
@@ -38,47 +36,16 @@ class WechatCredential(models.Model):
             self.save()
             return self.token_in_db
 
-    def init_menu(self):
-        url = create_menu_api.format(access_token=self.token)
-        redirect_uri = quote_plus("http://"+settings.DOMAIN+"/subscribe")
-        data = {
-            "button": [
-                {
-                    "type": "click",
-                    "name": "收取未读信息",
-                    "key": GET_UNREAD_MESSAGE_KEY,
-                },
-                {
-                    "type": "view",
-                    "name": "绑定手机号码",
-                    "url": BIND_PHONE_URL.format(app_id=self.app_id, redirect_uri=redirect_uri)
-                }]
-        }
-        data = json.dumps(data, ensure_ascii=False).encode('utf-8')
-        r = requests.post(url, data=data)
-        if r.status_code == 200:
-            data = r.json()
-            errcode = data.get('errcode', True)
-            if errcode != 0:
-                raise CreateMenuError
-            return True
-
     @staticmethod
-    def get_open_id_by_code(code):
-        url = get_open_id_api.format(app_id=WechatCredential.app_id, app_secret=WechatCredential.app_secret, code=code)
-        r = requests.get(url)
-        data = r.json()
-        if r.status_code == 200:
-            open_id = data.get('openid')
-            if open_id:
-                return open_id
-        raise GetOpenIDError
+    def get_wc():
+        if not WechatCredential.objects.all().exists():
+            wc = WechatCredential.objects.create()
+        else:
+            wc = WechatCredential.objects.all()[0]
+        return wc
 
 
-
-class UserCredential(models.Model):
-    number = models.CharField(max_length=11, null=False, blank=False, unique=True)
-    sim_serial = models.CharField(max_length=100, null=True, blank=False, unique=True)
+class User(models.Model):
     open_id = models.CharField(max_length=100, null=True, blank=False, unique=True)
 
     @property
@@ -90,11 +57,52 @@ class UserCredential(models.Model):
         return bool(self.app_id)
 
 
+class Phone(models.Model):
+    ticket = models.CharField(max_length=100, null=True, blank=False)  # Used as scene_id.
+    nickname = models.CharField(max_length=50, null=True, blank=True)
+    identifier = models.CharField(max_length=100, null=True, blank=False)
+    iccid = models.CharField(max_length=100, null=True, blank=False, unique=True)
+    owner = models.Model(User, null=True)
+
+    wc = WechatCredential.get_wc()
+    ticket_update_time = models.DateTimeField(null=True)
+    ticket_expire_in = 1800
+
+    def is_bind(self):
+        return bool(self.owner)
+
+    @staticmethod
+    def get_identifier():
+        return str(uuid.uuid4()) + str(int(time.mktime(datetime.now().timetuple())))
+
+    @staticmethod
+    def check_auth(identifier, iccid):
+        if not Phone.objects.filter(identifier=identifier).exists():
+            return False
+        else:
+            phone = Phone.objects.get(identifier=identifier)
+            return phone.iccid == iccid
+
+    def get_bind_info(self):
+        url = create_qr_api.format(access_token=Phone.wc.token)
+        data = {"expire_seconds": Phone.ticket_expire_in, "action_name": "QR_SCENE", "action_info": {"scene": {"scene_id": 123}}}
+        r = requests.post(url, json=data)
+        if r.status_code == 200:
+            errcode = data.get("errcode")
+            if errcode:
+                raise GetQRFailed
+            r_data = r.json()
+            self.ticket = data.get("ticket")
+            self.ticket_update_time = timezone.now()
+            qr_url = data.get("url")
+            return {"qr_url": qr_url, "identifier": self.identifier}
+
+
 class Message(models.Model):
     content = models.CharField(max_length=200, null=False, blank=False)
     is_read = models.BooleanField(default=False)
 
-    credential = models.ForeignKey(UserCredential)
+    credential = models.ForeignKey(User)
 
     class Meta:
         ordering = ['id']  # ordered by created_time ascending.

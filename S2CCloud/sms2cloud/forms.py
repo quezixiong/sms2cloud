@@ -4,7 +4,7 @@ from sms2cloud.models import *
 
 class BindForm(forms.ModelForm):
     class Meta:
-        model = UserCredential
+        model = User
         fields = ['number', 'sim_serial']
 
 

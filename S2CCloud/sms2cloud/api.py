@@ -12,6 +12,8 @@ subscribe_url =  "https://open.weixin.qq.com/connect/oauth2/authorize" \
 get_open_id_api = "https://api.weixin.qq.com/sns/oauth2/access_token" \
                   "?appid={app_id}&secret={app_secret}&code={code}&grant_type=authorization_code"
 
+create_qr_api = "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token={access_token}"
+
 # add_tmp_material_api = "https://api.weixin.qq.com/cgi-bin/media/upload?access_token={access_token}&type=image" #新增临时图片
 #
 # add_material_api = "http://api.weixin.qq.com/cgi-bin/material/add_material?access_token={access_token}&type=image" #新增永久图片
@@ -25,3 +27,11 @@ get_open_id_api = "https://api.weixin.qq.com/sns/oauth2/access_token" \
 # add_news_api = "https://api.weixin.qq.com/cgi-bin/material/add_news?access_token={access_token}" #新增永久图文素材
 #
 # update_news_material_api = "https://api.weixin.qq.com/cgi-bin/material/update_news?access_token={access_token}" #修改永久图文素材
+
+
+class ErrCode:
+    OK = 0
+    ICCID_NOT_VALID = 1
+    ICCID_ALREADY_BIND = 2
+    IDENTIFIER_NOT_VALID = 3
+    NOT_AUTHORIZED = 4

@@ -5,11 +5,12 @@ from lxml import etree
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from sms2cloud.forms import *
 from sms2cloud.models import *
+from sms2cloud.api import ErrCode
 from hashlib import sha1
 
 
@@ -23,18 +24,54 @@ class JSONResponse(HttpResponse):
         super(JSONResponse, self).__init__(content, **kwargs)
 
 
+@require_GET
+def get_bind(request):
+    iccid = request.GET.get("iccid")
+    if not iccid:
+        data = {"errcode": ErrCode.ICCID_ALREADY_BIND, "errmsg": "iccid not valid"}
+        return JSONResponse(data=data, status=200)
+    if Phone.objects.filter("iccid").exists():
+        phone = Phone.objects.get(iccid=iccid)
+        if phone.is_bind():
+            data = {"errmsg": "iccid already bind", "errcode": ErrCode.ICCID_ALREADY_BIND}
+            return JSONResponse(data=data, status=200)
+    else:
+        phone = Phone.objects.create(identifier=Phone.get_identifier(), iccid=iccid)
+    data = phone.get_bind_info()
+    data["errcode"] = ErrCode.OK
+    return JSONResponse(data=data, status=200)
+
+
+
+@require_GET
+def get_bind_status(request):
+    identifier = request.GET.get('identifier')
+    data = JSONParser().parse(request)
+    iccid = data.get("iccid")
+    if not Phone.check_auth(identifier, iccid):
+        data = {"errcode": ErrCode.NOT_AUTHORIZED, "errmsg": "not authorized"}
+        return JSONResponse(data=data, status=200)
+    if not identifier or not Phone.objects.filter(identifier=identifier).exists():
+        data = {"errcode": ErrCode.IDENTIFIER_NOT_VALID, "errmsg": "identifier not valid"}
+        return JSONResponse(data=data, status=200)
+    else:
+        phone = Phone.objects.get(identifier=identifier)
+        data = {"is_bind": phone.is_bind(), "errcode": ErrCode.OK}
+        return JSONResponse(data=data, status=200)
+
+
 @csrf_exempt
 @require_POST
 def bind(request):
     data = JSONParser().parse(request)
     number = data.get("number")
     sim_serial = data.get("serialNumber")
-    if UserCredential.objects.filter(number=number).exists():
-        uc = UserCredential.objects.get(number=number)
+    if User.objects.filter(number=number).exists():
+        uc = User.objects.get(number=number)
         uc.sim_serial = sim_serial
         uc.save()
     else:
-        UserCredential.objects.create(number=number, sim_serial=sim_serial)
+        User.objects.create(number=number, sim_serial=sim_serial)
     data = {"errcode": 0, "errmsg": "success"}
     return JSONResponse(data=data, status=200)
 
@@ -47,7 +84,7 @@ def message(request):
     sim_serial = data.get("serialNumber")
     message = data.get("message")
     if auth_number(number, sim_serial):
-        uc = UserCredential.objects.get(number=number)
+        uc = User.objects.get(number=number)
         Message.objects.create(message=message, credential=uc)
         data = {"errcode": 0, "errmsg": "success"}
         return JSONResponse(data=data, status=200)
@@ -56,8 +93,8 @@ def message(request):
 
 
 def auth(number, sim_serial):
-    if UserCredential.objects.filter(number=number).exists():
-        uc = UserCredential.objects.get(number=number)
+    if User.objects.filter(number=number).exists():
+        uc = User.objects.get(number=number)
         return uc.sim_serial == sim_serial
     else:
         return False
@@ -77,19 +114,19 @@ def subscribe(request):
             number = form.cleaned_data['number']
             code = form.cleaned_data['code']
             open_id = WechatCredential.get_open_id_by_code(code)
-            if UserCredential.objects.filter(number=number).exists():
-                uc = UserCredential.objects.get(number=number)
+            if User.objects.filter(number=number).exists():
+                uc = User.objects.get(number=number)
                 uc.open_id = open_id
                 uc.save()
             else:
-                UserCredential.objects.create(number=number, open_id=open_id)
+                User.objects.create(number=number, open_id=open_id)
             return HttpResponse("success", status=200)
         return HttpResponse("post data is valid", status=400)
 
 
 def auth_number(number, sim_serial):
-    if UserCredential.objects.filter(number=number).exists():
-        uc = UserCredential.objects.get(number=number)
+    if User.objects.filter(number=number).exists():
+        uc = User.objects.get(number=number)
         return uc.sim_serial == sim_serial
     else:
         return False
@@ -119,7 +156,7 @@ def get_unread_message(uc):
 
 @csrf_exempt
 def server_handler(request):
-    verify_token = WechatCredential.verify_token
+    verify_token = WechatCredential.server_token
     if request.method == "GET":
         if check_signature(request, verify_token):
             return HttpResponse(request.GET.get('echostr'))
@@ -133,10 +170,10 @@ def server_handler(request):
         if msg_type == 'event' and event_key == GET_UNREAD_MESSAGE_KEY:
             open_id = root.find("FromUserName").text
             wechat_id = root.find("ToUserName").text
-            if not UserCredential.objects.filter(open_id=open_id).exists():
+            if not User.objects.filter(open_id=open_id).exists():
                 pass
             else:
-                uc = UserCredential.objects.get(open_id=open_id)
+                uc = User.objects.get(open_id=open_id)
                 msg = get_unread_message(uc)
                 # Construct a Response xml
                 root = etree.Element('xml')

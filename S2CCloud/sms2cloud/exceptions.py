@@ -8,3 +8,6 @@ class CreateMenuError(Exception):
 
 class GetOpenIDError(Exception):
     pass
+
+class GetQRFailed(Exception):
+    pass
