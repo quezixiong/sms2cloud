@@ -9,17 +9,12 @@
             android:id="@+id/prompt_textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/input_number"
+            android:text="@string/scan_in_wechat"
             android:layout_gravity="center_horizontal"/>
-    <EditText
-            android:id="@+id/number_editText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"/>
-    <Button
-            android:id="@+id/confirm_button"
+
+    <ImageView
+            android:id="@+id/qr_imageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/confirm"
-            android:layout_gravity="center_horizontal"/>
+            />
 </LinearLayout>

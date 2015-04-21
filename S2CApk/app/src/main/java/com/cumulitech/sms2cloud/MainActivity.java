@@ -31,6 +31,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // init AppSettings
+        AppSettings.init(this);
         myData = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isBind = myData.getBoolean("isBind", false);
         if(isBind){

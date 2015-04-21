@@ -10,6 +10,6 @@
     <string name="stop_monitor">停止监听</string>
     <string name="no_internet">没有网络连接</string>
     <string name="connecting">正在连接</string>
-    <string name="input_number">请输入手机号</string>
+    <string name="scan_in_wechat">微信扫码绑定（30分钟有效）</string>
     <string name="wait">请等待</string>
 </resources>
