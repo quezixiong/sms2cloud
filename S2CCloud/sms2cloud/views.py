@@ -103,12 +103,12 @@ def get_unread_message(uc):
 
 @csrf_exempt
 def server_handler(request):
-    verify_token = WechatCredential.server_token
+    server_token = WechatCredential.server_token
     if request.method == "GET":
-        if check_signature(request, verify_token):
+        if check_signature(request, server_token):
             return HttpResponse(request.GET.get('echostr'))
     elif request.method == "POST":
-        if not check_signature(request, verify_token):
+        if not check_signature(request, server_token):
             return HttpResponse(status=400)
         # Get data xml tree
         parser = etree.XMLParser(strip_cdata=False)
@@ -145,12 +145,12 @@ def server_handler(request):
 
         # Construct a Response xml
         ret_root = etree.Element('xml')
-        to_user_name = etree.Element('ToUserName')
-        to_user_name.text = etree.CDATA(from_user_name)
-        ret_root.append(to_user_name)
-        from_user_name = etree.Element('FromUserName')
-        from_user_name.text = etree.CDATA(to_user_name)
-        ret_root.append(from_user_name)
+        send_to = etree.Element('ToUserName')
+        send_to.text = etree.CDATA(from_user_name)
+        ret_root.append(send_to)
+        from_wechat = etree.Element('FromUserName')
+        from_wechat.text = etree.CDATA(to_user_name)
+        ret_root.append(from_wechat)
         create_time = etree.Element('CreateTime')
         create_time.text = etree.CDATA(str(int(time.mktime(datetime.now().timetuple()))))
         ret_root.append(create_time)
