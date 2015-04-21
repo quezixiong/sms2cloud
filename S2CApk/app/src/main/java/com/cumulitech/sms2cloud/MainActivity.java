@@ -33,18 +33,17 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         // init AppSettings
         AppSettings.init(this);
+
         myData = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isBind = myData.getBoolean("isBind", false);
         if(isBind){
             setContentView(R.layout.activity_main);
-            String hello = "你好" + myData.getString("number", null);
-            helloTextview = (TextView)findViewById(R.id.helloTextview);
-            helloTextview.setText(hello);
             switchButton = (Button)findViewById(R.id.switch_button);
             switchButton.setOnClickListener(this);
             logTextview = (TextView)findViewById(R.id.logTextView);
             logTextview.setVisibility(View.INVISIBLE);
             isMonitorOn = false;
+
             msgServiceIntent = new Intent();
             msgServiceIntent.setClass(MainActivity.this, MsgMonitorService.class);
             registerReceiver(bcReceiver, new IntentFilter(MsgMonitorService.BROADCAST_ACTION));

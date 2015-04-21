@@ -29,8 +29,8 @@ public class AppSettings {
             prop.load(inputStream);
             serverUrl = prop.getProperty("serverUrl");
             getBindQRUrl = serverUrl + "/bind?iccid=%s";
-            getBindStatusUrl = serverUrl + "/bind_status";
-            sendMsgURL = serverUrl + "/message";
+            getBindStatusUrl = serverUrl + "/bind_status?identifier=%s";
+            sendMsgURL = serverUrl + "/message?identifier=%s";
             instance = this;
         } catch (Resources.NotFoundException e) {
             Log.e(tag, "", e);

@@ -103,14 +103,14 @@ public class ServerHandler {
     public Boolean sendMsg(String msg) throws IOException{
         try {
             AppSettings appSettings = AppSettings.getInstance();
-            String url = String.format(appSettings.sendMsgURL);
+            String url = String.format(appSettings.sendMsgURL, URLEncoder.encode(identifier, "UTF-8"));
             HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json;charset=utf-8");
 
             JSONObject jsonObj = new JSONObject();
             jsonObj.put("message", new String(msg.getBytes(Charset.forName("UTF-8")), Charset.forName("UTF-8")));
-//            jsonObj.put("serialNumber", serialNumber);
+            jsonObj.put("iccid", iccid);
             String payload = jsonObj.toString();
 
             OutputStream output = connection.getOutputStream();
@@ -126,7 +126,7 @@ public class ServerHandler {
                 }
                 JSONObject r_obj = new JSONObject(result);
                 int errcode = r_obj.getInt("errcode");
-                return errcode == 0;
+                return errcode == Utility.ErrorCode.OK;
             }
         } catch (JSONException e) {
             Log.e(tag, "Exception", e);

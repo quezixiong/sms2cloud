@@ -14,7 +14,7 @@ import android.util.Log;
 public class MsgMonitorService extends Service {
     private static final String TAG = "MsgMonitorService";
     private Uri SMS_INBOX = Uri.parse("content://sms/");
-    public static final String BROADCAST_ACTION = "com.cumulitech.sms2cloud.app";
+    public static final String BROADCAST_ACTION = "com.cumulitech.sms2cloud";
 
     private MsgObserver msgObserver;
     public Handler msgHandler = new Handler();
