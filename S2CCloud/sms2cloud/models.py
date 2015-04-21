@@ -72,9 +72,12 @@ class Phone(models.Model):
     iccid = models.CharField(max_length=100, null=True, blank=False, unique=True)
     owner = models.ForeignKey(User, null=True, related_name="phones")
 
-    wc = WechatCredential.get_wc()
     ticket_update_time = models.DateTimeField(null=True)
     ticket_expire_in = 1800  # 1800 is max number allowed by wechat.
+
+    def __init__(self, *args, **kwargs):
+        self.wc = WechatCredential.get_wc()
+        super(Phone, self).__init__(*args, **kwargs)
 
     def is_bind(self):
         return bool(self.owner)
@@ -96,7 +99,7 @@ class Phone(models.Model):
         return timezone.now() - self.ticket_update_time > timedelta(seconds=Phone.ticket_expire_in)
 
     def get_bind_info(self):
-        url = create_qr_api.format(access_token=Phone.wc.token)
+        url = create_qr_api.format(access_token=self.wc.token)
         data = {"expire_seconds": Phone.ticket_expire_in, "action_name": "QR_SCENE", "action_info": {"scene": {"scene_id": 123}}}
         r = requests.post(url, json=data)
         data = r.json()
