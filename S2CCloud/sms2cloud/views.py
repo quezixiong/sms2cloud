@@ -60,28 +60,24 @@ def get_bind_status(request):
         return JSONResponse(data=data, status=200)
 
 
-# @csrf_exempt
-# @require_POST
-# def message(request):
-#     data = JSONParser().parse(request)
-#     number = data.get("number")
-#     sim_serial = data.get("serialNumber")
-#     message = data.get("message")
-#     if auth_number(number, sim_serial):
-#         uc = User.objects.get(number=number)
-#         Message.objects.create(message=message, credential=uc)
-#         data = {"errcode": 0, "errmsg": "success"}
-#         return JSONResponse(data=data, status=200)
-#     else:
-#         return JSONResponse(data={"errcode": -1}, status=200)
-#
-#
-# def auth(number, sim_serial):
-#     if User.objects.filter(number=number).exists():
-#         uc = User.objects.get(number=number)
-#         return uc.sim_serial == sim_serial
-#     else:
-#         return False
+@csrf_exempt
+@require_POST
+def message(request):
+    identifier = request.GET.get('identifier')
+    data = JSONParser().parse(request)
+    iccid = data.get("iccid")
+    message = data.get("message")
+    if not Phone.check_auth(identifier, iccid):
+        data = {"errcode": ErrCode.NOT_AUTHORIZED, "errmsg": "not authorized"}
+        return JSONResponse(data=data, status=200)
+    if not identifier or not Phone.objects.filter(identifier=identifier).exists():
+        data = {"errcode": ErrCode.IDENTIFIER_NOT_VALID, "errmsg": "identifier not valid"}
+        return JSONResponse(data=data, status=200)
+    else:
+        phone = Phone.objects.get(identifier=identifier)
+        Message.objects.create(content=message, owner=phone.owner)
+        data = {"success": True, "errorcode": ErrCode.OK}
+        return JSONResponse(data=data, status=200)
 
 
 def check_signature(request, verify_token):
