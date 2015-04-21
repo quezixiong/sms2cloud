@@ -2,10 +2,10 @@ from django import forms
 from sms2cloud.models import *
 
 
-class BindForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['number', 'sim_serial']
+# class BindForm(forms.ModelForm):
+#     class Meta:
+#         model = User
+#         fields = ['number', 'sim_serial']
 
 
 class MessageForm(forms.Form):

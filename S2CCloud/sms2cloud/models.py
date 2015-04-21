@@ -4,13 +4,12 @@ import time
 from datetime import datetime
 import uuid
 from sms2cloud.api import *
-from django.db import models
 from django.utils import timezone
 import requests
 from sms2cloud.api import get_token_api
 from sms2cloud.exceptions import *
 from django.conf import settings
-from urllib.parse import quote_plus
+from django.db import models
 
 
 class WechatCredential(models.Model):
@@ -20,7 +19,6 @@ class WechatCredential(models.Model):
     app_secret = settings.APP_SECRET
     server_token = settings.SERVER_TOKEN
     token_expire_in = 7200
-
 
     @property
     def token(self):
@@ -48,6 +46,16 @@ class WechatCredential(models.Model):
 class User(models.Model):
     open_id = models.CharField(max_length=100, null=True, blank=False, unique=True)
 
+    def get_unread_msgs(self):
+        ret = ""
+        messages = self.messages.all()
+        for msg in messages:
+            if not msg.is_read:
+                ret += "\n" + msg.content
+                msg.is_read = True
+                msg.save()
+        return ret
+
     @property
     def is_bind(self):
         return bool(self.sim_serial)
@@ -62,11 +70,11 @@ class Phone(models.Model):
     nickname = models.CharField(max_length=50, null=True, blank=True)
     identifier = models.CharField(max_length=100, null=True, blank=False)
     iccid = models.CharField(max_length=100, null=True, blank=False, unique=True)
-    owner = models.Model(User, null=True)
+    owner = models.ForeignKey(User, null=True, related_name="phones")
 
     wc = WechatCredential.get_wc()
     ticket_update_time = models.DateTimeField(null=True)
-    ticket_expire_in = 1800
+    ticket_expire_in = 1800  # 1800 is max number allowed by wechat.
 
     def is_bind(self):
         return bool(self.owner)
@@ -83,10 +91,15 @@ class Phone(models.Model):
             phone = Phone.objects.get(identifier=identifier)
             return phone.iccid == iccid
 
+    @property
+    def is_ticket_expired(self):
+        return timezone.now() - self.ticket_update_time > timedelta(seconds=Phone.ticket_expire_in)
+
     def get_bind_info(self):
         url = create_qr_api.format(access_token=Phone.wc.token)
         data = {"expire_seconds": Phone.ticket_expire_in, "action_name": "QR_SCENE", "action_info": {"scene": {"scene_id": 123}}}
         r = requests.post(url, json=data)
+        data = r.json()
         if r.status_code == 200:
             errcode = data.get("errcode")
             if errcode:
@@ -95,14 +108,16 @@ class Phone(models.Model):
             self.ticket = data.get("ticket")
             self.ticket_update_time = timezone.now()
             qr_url = data.get("url")
-            return {"qr_url": qr_url, "identifier": self.identifier}
+            return {"qr_url": qr_url, "identifier": self.identifier, "expire_in": Phone.ticket_expire_in}
+        else:
+            raise GetQRFailed
 
 
 class Message(models.Model):
     content = models.CharField(max_length=200, null=False, blank=False)
     is_read = models.BooleanField(default=False)
 
-    credential = models.ForeignKey(User)
+    owner = models.ForeignKey(User, related_name="messages")
 
     class Meta:
         ordering = ['id']  # ordered by created_time ascending.
